@@ -7,8 +7,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ConseilRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Conseil
 {
     #[ORM\Id]
@@ -17,13 +19,28 @@ class Conseil
     private ?int $id = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups('conseilCurrentMonth:read')]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    #[ORM\PrePersist]
+    private function onPrePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+    }
+
+    #[ORM\PreUpdate]
+    private function onPreUpdate(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
 
     /**
      * @var Collection<int, ConseilMois>
@@ -90,6 +107,7 @@ class Conseil
         if (!$this->mois->contains($mois)) {
             $this->mois->add($mois);
             $mois->setConseil($this);
+            $this->updatedAt = new \DateTimeImmutable();
         }
 
         return $this;
@@ -101,6 +119,7 @@ class Conseil
             // set the owning side to null (unless already changed)
             if ($mois->getConseil() === $this) {
                 $mois->setConseil(null);
+                $this->updatedAt = new \DateTimeImmutable();
             }
         }
 
