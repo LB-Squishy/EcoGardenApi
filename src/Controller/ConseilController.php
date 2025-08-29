@@ -14,7 +14,8 @@ final class ConseilController extends AbstractController
     #[Route('/api/conseils', name: 'app_conseil', methods: ['GET'])]
     public function getAllConseils(ConseilRepository $conseilRepository, SerializerInterface $serializer): JsonResponse
     {
-        $conseils = $conseilRepository->findAll();
+        $currentMonth = (int) date('n');
+        $conseils = $conseilRepository->findByMonth($currentMonth);
         $jsonConseils = $serializer->serialize($conseils, 'json');
 
         return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);

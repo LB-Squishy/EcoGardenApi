@@ -3,11 +3,12 @@
 namespace App\Entity;
 
 use App\Repository\ConseilRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ConseilRepository::class)]
-#[ORM\HasLifecycleCallbacks]
 class Conseil
 {
     #[ORM\Id]
@@ -18,27 +19,21 @@ class Conseil
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::JSON)]
-    private array $mois = [];
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\PrePersist]
-    private function onPrePersist(): void
-    {
-        $now = new \DateTimeImmutable();
-        $this->createdAt = $now;
-        $this->updatedAt = $now;
-    }
+    /**
+     * @var Collection<int, ConseilMois>
+     */
+    #[ORM\OneToMany(targetEntity: ConseilMois::class, mappedBy: 'conseil', orphanRemoval: true)]
+    private Collection $mois;
 
-    #[ORM\PreUpdate]
-    private function onPreUpdate(): void
+    public function __construct()
     {
-        $this->updatedAt = new \DateTimeImmutable();
+        $this->mois = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -54,18 +49,6 @@ class Conseil
     public function setDescription(string $description): static
     {
         $this->description = $description;
-
-        return $this;
-    }
-
-    public function getMois(): array
-    {
-        return $this->mois;
-    }
-
-    public function setMois(array $mois): static
-    {
-        $this->mois = $mois;
 
         return $this;
     }
@@ -90,6 +73,36 @@ class Conseil
     public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ConseilMois>
+     */
+    public function getMois(): Collection
+    {
+        return $this->mois;
+    }
+
+    public function addMois(ConseilMois $mois): static
+    {
+        if (!$this->mois->contains($mois)) {
+            $this->mois->add($mois);
+            $mois->setConseil($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMois(ConseilMois $mois): static
+    {
+        if ($this->mois->removeElement($mois)) {
+            // set the owning side to null (unless already changed)
+            if ($mois->getConseil() === $this) {
+                $mois->setConseil(null);
+            }
+        }
 
         return $this;
     }
