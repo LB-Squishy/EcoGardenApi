@@ -17,3 +17,8 @@ Fixtures:
 
 -   composer require orm-fixtures --dev
 -   php bin/console doctrine:fixtures:load (appliquer la fixture)
+
+Premieres routes:
+
+-   php bin/console make:controller
+-   composer require symfony/serializer-pack
