@@ -16,20 +16,23 @@ class Conseil
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups('getConseilsByMonth:read')]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups('conseilCurrentMonth:read')]
+    #[Groups('getConseilsByMonth:read')]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Groups('getConseilsByMonth:read')]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Groups('getConseilsByMonth:read')]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\PrePersist]
-    private function onPrePersist(): void
+    public function onPrePersist(): void
     {
         $now = new \DateTimeImmutable();
         $this->createdAt = $now;
@@ -37,7 +40,7 @@ class Conseil
     }
 
     #[ORM\PreUpdate]
-    private function onPreUpdate(): void
+    public function onPreUpdate(): void
     {
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -45,7 +48,7 @@ class Conseil
     /**
      * @var Collection<int, ConseilMois>
      */
-    #[ORM\OneToMany(targetEntity: ConseilMois::class, mappedBy: 'conseil', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ConseilMois::class, mappedBy: 'conseil', orphanRemoval: true, cascade: ['persist'])]
     private Collection $mois;
 
     public function __construct()
@@ -107,7 +110,6 @@ class Conseil
         if (!$this->mois->contains($mois)) {
             $this->mois->add($mois);
             $mois->setConseil($this);
-            $this->updatedAt = new \DateTimeImmutable();
         }
 
         return $this;
@@ -119,7 +121,6 @@ class Conseil
             // set the owning side to null (unless already changed)
             if ($mois->getConseil() === $this) {
                 $mois->setConseil(null);
-                $this->updatedAt = new \DateTimeImmutable();
             }
         }
 
