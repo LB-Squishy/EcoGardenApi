@@ -4,13 +4,43 @@ namespace App\DataFixtures;
 
 use App\Entity\Conseil;
 use App\Entity\ConseilMois;
+use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
+    private $userPasswordHasher;
+
+    public function __construct(UserPasswordHasherInterface $userPasswordHasher)
+    {
+        $this->userPasswordHasher = $userPasswordHasher;
+    }
+
     public function load(ObjectManager $manager): void
     {
+        // Création d'un user "normal"
+        $user = new User();
+        $user
+            ->setEmail('user@ecogardenapi.com')
+            ->setRoles(['ROLE_USER'])
+            ->setPassword($this->userPasswordHasher->hashPassword($user, 'user'))
+            ->setVille('Paris')
+            ->setPays('FR');
+        $manager->persist($user);
+
+        // Création d'un user "admin"
+        $user = new User();
+        $user
+            ->setEmail('admin@ecogardenapi.com')
+            ->setRoles(['ROLE_ADMIN'])
+            ->setPassword($this->userPasswordHasher->hashPassword($user, 'admin'))
+            ->setVille('New-York')
+            ->setPays('US');
+        $manager->persist($user);
+
+        // Création de conseils avec des mois associés
         $conseilData = [
             ['Profiter de l’hiver pour organiser vos cultures et commander vos graines.', [1, 2, 3]],
             ['Arrosez vos plantes le matin pour minimiser l\'évaporation de l\'eau et maximiser l\'absorption par les racines.', [1, 2, 3]],
@@ -27,13 +57,8 @@ class AppFixtures extends Fixture
         foreach ($conseilData as [$texte, $moisArray]) {
             $conseil = new Conseil();
 
-            $createdAt = new \DateTimeImmutable(sprintf('2025-%02d-%02d %02d:%02d:%02d', rand(1, 12), rand(1, 28), rand(0, 23), rand(0, 59), rand(0, 59)));
-            $updatedAt = $createdAt->modify('+' . rand(0, 10) . ' days +' . rand(0, 23) . ' hours +' . rand(0, 59) . ' minutes');
-
             $conseil
-                ->setDescription($texte)
-                ->setCreatedAt($createdAt)
-                ->setUpdatedAt($updatedAt);
+                ->setDescription($texte);
 
             foreach ($moisArray as $moisNumber) {
                 $mois = new ConseilMois();

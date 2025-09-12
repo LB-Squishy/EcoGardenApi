@@ -29,7 +29,7 @@ class Conseil
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        $now = new \DateTimeImmutable();
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
         $this->createdAt = $now;
         $this->updatedAt = $now;
     }
@@ -37,7 +37,7 @@ class Conseil
     #[ORM\PreUpdate]
     public function onPreUpdate(): void
     {
-        $this->updatedAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
     }
 
     /**

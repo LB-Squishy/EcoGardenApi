@@ -23,3 +23,6 @@ Premieres routes:
 
 -   php bin/console make:controller
 -   composer require symfony/serializer-pack
+-   composer require security
+-   php bin/console make:user
+-   php bin/console make:entity User
