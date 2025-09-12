@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ConseilController extends AbstractController
 {
@@ -90,6 +91,7 @@ final class ConseilController extends AbstractController
      * Ajouter un conseil
      */
     #[Route('/api/conseil', name: 'app_conseil_add', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function postConseil(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         // Récupération des données
@@ -138,6 +140,7 @@ final class ConseilController extends AbstractController
      * Mettre à jour un conseil
      */
     #[Route('/api/conseil/{id}', name: 'app_conseil_edit', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function putConseil(int $id, Request $request, EntityManagerInterface $entityManager, ConseilRepository $conseilRepository): JsonResponse
     {
         // Récupération du conseil à mettre à jour
@@ -207,6 +210,7 @@ final class ConseilController extends AbstractController
      * Supprimer un conseil
      */
     #[Route('/api/conseil/{id}', name: 'app_conseil_delete', methods: ['DELETE'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function deleteConseil(int $id, EntityManagerInterface $entityManager, ConseilRepository $conseilRepository): JsonResponse
     {
         // Récupération du conseil à supprimer

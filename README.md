@@ -26,3 +26,9 @@ Premieres routes:
 -   composer require security
 -   php bin/console make:user
 -   php bin/console make:entity User
+
+Gérer l'authentification:
+
+-   composer require lexik/jwt-authentication-bundle
+-   Générer la clef privé : openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+-   Générer la clef publique : openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
