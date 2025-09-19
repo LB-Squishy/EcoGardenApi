@@ -19,6 +19,7 @@ final class ConseilController extends AbstractController
      * Récupère les conseils du mois en cours
      */
     #[Route('/api/conseils', name: 'app_conseil_add_current', methods: ['GET'])]
+    #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
     public function getConseilsCurrentMonth(ConseilRepository $conseilRepository): JsonResponse
     {
         // Récupération du mois courant
@@ -54,6 +55,7 @@ final class ConseilController extends AbstractController
      * Récupère les conseils d'un mois en particulier
      */
     #[Route('/api/conseils/{mois}', name: 'app_conseil_add_month', methods: ['GET'])]
+    #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
     public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository): JsonResponse
     {
         // Validation du mois
@@ -238,6 +240,6 @@ final class ConseilController extends AbstractController
                 'conseil' =>  $ResponseData
             ];
 
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($response, Response::HTTP_NO_CONTENT, []);
     }
 }

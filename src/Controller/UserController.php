@@ -18,7 +18,7 @@ final class UserController extends AbstractController
      * Création d'un nouvel utilisateur
      */
     #[Route('/api/user', name: 'app_user_create', methods: ['POST'])]
-    public function postUser(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): JsonResponse
+    public function postUser(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         // Récupération des données
         $data = json_decode($request->getContent(), true);
@@ -139,6 +139,6 @@ final class UserController extends AbstractController
             'user' => $responseData
         ];
 
-        return new JsonResponse($response, Response::HTTP_OK);
+        return new JsonResponse($response, Response::HTTP_NO_CONTENT);
     }
 }
