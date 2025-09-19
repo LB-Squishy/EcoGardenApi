@@ -18,7 +18,7 @@ final class ConseilController extends AbstractController
     /**
      * Récupère les conseils du mois en cours
      */
-    #[Route('/api/conseils', name: 'app_conseil_current', methods: ['GET'])]
+    #[Route('/api/conseils', name: 'app_conseil_add_current', methods: ['GET'])]
     public function getConseilsCurrentMonth(ConseilRepository $conseilRepository): JsonResponse
     {
         // Récupération du mois courant
@@ -53,7 +53,7 @@ final class ConseilController extends AbstractController
     /**
      * Récupère les conseils d'un mois en particulier
      */
-    #[Route('/api/conseils/{mois}', name: 'app_conseil_month', methods: ['GET'])]
+    #[Route('/api/conseils/{mois}', name: 'app_conseil_add_month', methods: ['GET'])]
     public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository): JsonResponse
     {
         // Validation du mois
@@ -90,7 +90,7 @@ final class ConseilController extends AbstractController
     /**
      * Ajouter un conseil
      */
-    #[Route('/api/conseil', name: 'app_conseil_add', methods: ['POST'])]
+    #[Route('/api/conseil', name: 'app_conseil_create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function postConseil(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {

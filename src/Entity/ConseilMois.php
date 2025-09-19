@@ -17,6 +17,7 @@ class ConseilMois
 
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\NotNull]
+    #[Assert\NotBlank(message: 'Le mois est obligatoire')]
     #[Assert\Range(min: 1, max: 12)]
     private ?int $mois = null;
 
