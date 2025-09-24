@@ -13,16 +13,23 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 final class MeteoController extends AbstractController
 {
+    private HttpClientInterface $httpClient;
+    private TagAwareCacheInterface $cache;
+
+    public function __construct(HttpClientInterface $httpClient, TagAwareCacheInterface $cache)
+    {
+        $this->httpClient = $httpClient;
+        $this->cache = $cache;
+    }
+
     /**
      * Récupère la météo de l'utilisateur connecté 
      * https://api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}
      */
     #[Route('/api/meteo', name: 'app_meteo', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
-    public function getLocalMeteo(HttpClientInterface $httpClient, TagAwareCacheInterface $cache): JsonResponse
+    public function getLocalMeteo(): JsonResponse
     {
-        // Clé API OpenWeather
-        $openWeatherApiKey = $this->getParameter('openweather_api_key');
         // Récupération de l'utilisateur connecté
         /** @var User $user */
         $user = $this->getUser();
@@ -40,7 +47,7 @@ final class MeteoController extends AbstractController
         $cacheKey = 'meteo_' . $cityName;
 
         // Récupération des données de la météo avec mise en cache
-        $meteoData = $cache->get($cacheKey, function (ItemInterface $item) use ($httpClient, $cityName, $openWeatherApiKey) {
+        $meteoData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($cityName) {
 
             // Suivi de mise en cache
             // echo ("L'élément n'existe pas dans le cache ou a expiré. Requête à l'API.");
@@ -50,13 +57,13 @@ final class MeteoController extends AbstractController
             $item->tag(['meteo']);
 
             // Requête à l'API OpenWeather
-            $apiResponse = $httpClient->request(
+            $apiResponse = $this->httpClient->request(
                 'GET',
                 'https://api.openweathermap.org/data/2.5/weather',
                 [
                     'query' => [
                         'q' => $cityName,
-                        'appid' => $openWeatherApiKey,
+                        'appid' => $this->getParameter('openweather_api_key'),
                         'units' => 'metric',
                         'lang' => 'fr'
                     ]
@@ -64,8 +71,11 @@ final class MeteoController extends AbstractController
             );
 
             // Gestion des erreurs de l'API
+            if ($apiResponse->getStatusCode() == 404) {
+                return ['error' => 'Ville non trouvée.'];
+            }
             if ($apiResponse->getStatusCode() !== 200) {
-                return null;
+                return ['error' => 'Erreur lors de la récupération des données météo.'];
             }
 
             // Traitement de la réponse de l'API
@@ -98,10 +108,8 @@ final class MeteoController extends AbstractController
      */
     #[Route('/api/meteo/{localisation}', name: 'app_meteo_localisation', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
-    public function getCityMeteo(string $localisation, HttpClientInterface $httpClient, TagAwareCacheInterface $cache): JsonResponse
+    public function getCityMeteo(string $localisation): JsonResponse
     {
-        // Clé API OpenWeather
-        $openWeatherApiKey = $this->getParameter('openweather_api_key');
         // Récupération de la localisation et traitement
         $cityName = trim(strtolower($localisation));
         if (empty($cityName)) {
@@ -112,7 +120,7 @@ final class MeteoController extends AbstractController
         $cacheKey = 'meteo_' . $cityName;
 
         // Récupération des données de la météo avec mise en cache
-        $meteoData = $cache->get($cacheKey, function (ItemInterface $item) use ($httpClient, $cityName, $openWeatherApiKey) {
+        $meteoData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($cityName) {
 
             // Suivi de mise en cache
             // echo ("L'élément n'existe pas dans le cache ou a expiré. Requête à l'API.");
@@ -122,13 +130,13 @@ final class MeteoController extends AbstractController
             $item->tag(['meteo']);
 
             // Requête à l'API OpenWeather
-            $apiResponse = $httpClient->request(
+            $apiResponse = $this->httpClient->request(
                 'GET',
                 'https://api.openweathermap.org/data/2.5/weather',
                 [
                     'query' => [
                         'q' => $cityName,
-                        'appid' => $openWeatherApiKey,
+                        'appid' => $this->getParameter('openweather_api_key'),
                         'units' => 'metric',
                         'lang' => 'fr'
                     ]
@@ -136,8 +144,11 @@ final class MeteoController extends AbstractController
             );
 
             // Gestion des erreurs de l'API
+            if ($apiResponse->getStatusCode() == 404) {
+                return ['error' => 'Ville non trouvée.'];
+            }
             if ($apiResponse->getStatusCode() !== 200) {
-                return null;
+                return ['error' => 'Erreur lors de la récupération des données météo.'];
             }
 
             // Traitement de la réponse de l'API

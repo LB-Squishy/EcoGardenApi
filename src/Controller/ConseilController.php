@@ -15,18 +15,27 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ConseilController extends AbstractController
 {
+    private ConseilRepository $conseilRepository;
+    private EntityManagerInterface $entityManager;
+
+    public function __construct(ConseilRepository $conseilRepository, EntityManagerInterface $entityManager)
+    {
+        $this->conseilRepository = $conseilRepository;
+        $this->entityManager = $entityManager;
+    }
+
     /**
      * Récupère les conseils du mois en cours
      */
     #[Route('/api/conseils', name: 'app_conseil_add_current', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
-    public function getConseilsCurrentMonth(ConseilRepository $conseilRepository): JsonResponse
+    public function getConseilsCurrentMonth(): JsonResponse
     {
         // Récupération du mois courant
         $currentMonth = (int) date('n');
 
         // Récupération des conseils pour le mois courant
-        $conseils = $conseilRepository->findByMonth($currentMonth);
+        $conseils = $this->conseilRepository->findByMonth($currentMonth);
         if (empty($conseils)) {
             return new JsonResponse(['message' => 'Aucun conseil pour le mois en cours'], Response::HTTP_NOT_FOUND);
         }
@@ -56,7 +65,7 @@ final class ConseilController extends AbstractController
      */
     #[Route('/api/conseils/{mois}', name: 'app_conseil_add_month', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
-    public function getConseilsByMonth(int $mois, ConseilRepository $conseilRepository): JsonResponse
+    public function getConseilsByMonth(int $mois): JsonResponse
     {
         // Validation du mois
         if ($mois < 1 || $mois > 12) {
@@ -64,7 +73,7 @@ final class ConseilController extends AbstractController
         }
 
         // Récupération des conseils pour le mois spécifié
-        $conseils = $conseilRepository->findByMonth($mois);
+        $conseils = $this->conseilRepository->findByMonth($mois);
         if (empty($conseils)) {
             return new JsonResponse(['message' => 'Aucun conseil pour le mois demandé: ' . $mois], Response::HTTP_NOT_FOUND);
         }
@@ -94,7 +103,7 @@ final class ConseilController extends AbstractController
      */
     #[Route('/api/conseil', name: 'app_conseil_create', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
-    public function postConseil(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function postConseil(Request $request): JsonResponse
     {
         // Récupération des données
         $data = json_decode($request->getContent(), true);
@@ -117,8 +126,8 @@ final class ConseilController extends AbstractController
         }
 
         // Persistance du conseil et des mois associés
-        $entityManager->persist($conseil);
-        $entityManager->flush();
+        $this->entityManager->persist($conseil);
+        $this->entityManager->flush();
 
         // Préparation des données du conseil ajouté
         $ResponseData =
@@ -143,10 +152,10 @@ final class ConseilController extends AbstractController
      */
     #[Route('/api/conseil/{id}', name: 'app_conseil_edit', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
-    public function putConseil(int $id, Request $request, EntityManagerInterface $entityManager, ConseilRepository $conseilRepository): JsonResponse
+    public function putConseil(int $id, Request $request): JsonResponse
     {
         // Récupération du conseil à mettre à jour
-        $conseil = $conseilRepository->find($id);
+        $conseil = $this->conseilRepository->find($id);
         if (!$conseil) {
             return new JsonResponse(['error' => 'Conseil non trouvé'], Response::HTTP_NOT_FOUND);
         }
@@ -173,7 +182,7 @@ final class ConseilController extends AbstractController
             // Supprimer les mois existants
             foreach ($conseil->getMois() as $conseilMois) {
                 $conseil->removeMois($conseilMois);
-                $entityManager->remove($conseilMois);
+                $this->entityManager->remove($conseilMois);
             }
             // Ajouter les nouveaux mois
             foreach ($data['mois'] as $mois) {
@@ -195,8 +204,8 @@ final class ConseilController extends AbstractController
             ];
 
         // Persistance des modifications
-        $entityManager->persist($conseil);
-        $entityManager->flush();
+        $this->entityManager->persist($conseil);
+        $this->entityManager->flush();
 
         // Préparation de la réponse
         $response =
@@ -213,10 +222,10 @@ final class ConseilController extends AbstractController
      */
     #[Route('/api/conseil/{id}', name: 'app_conseil_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
-    public function deleteConseil(int $id, EntityManagerInterface $entityManager, ConseilRepository $conseilRepository): JsonResponse
+    public function deleteConseil(int $id): JsonResponse
     {
         // Récupération du conseil à supprimer
-        $conseil = $conseilRepository->find($id);
+        $conseil = $this->conseilRepository->find($id);
         if (!$conseil) {
             return new JsonResponse(['error' => 'Conseil non trouvé'], Response::HTTP_NOT_FOUND);
         }
@@ -230,8 +239,8 @@ final class ConseilController extends AbstractController
             ];
 
         // Suppression du conseil
-        $entityManager->remove($conseil);
-        $entityManager->flush();
+        $this->entityManager->remove($conseil);
+        $this->entityManager->flush();
 
         // Préparation de la réponse
         $response =

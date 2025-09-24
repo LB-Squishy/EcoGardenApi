@@ -14,11 +14,20 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class UserController extends AbstractController
 {
+    private UserRepository $userRepository;
+    private EntityManagerInterface $entityManager;
+
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $entityManager)
+    {
+        $this->userRepository = $userRepository;
+        $this->entityManager = $entityManager;
+    }
+
     /**
      * Création d'un nouvel utilisateur
      */
     #[Route('/api/user', name: 'app_user_create', methods: ['POST'])]
-    public function postUser(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function postUser(Request $request): JsonResponse
     {
         // Récupération des données
         $data = json_decode($request->getContent(), true);
@@ -34,8 +43,8 @@ final class UserController extends AbstractController
         $user->setRoles(['ROLE_USER']);
 
         // Sauvegarde de l'utilisateur
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
 
         // Préparation des données de réponse
         $responseData = [
@@ -58,10 +67,10 @@ final class UserController extends AbstractController
      */
     #[Route('/api/user/{id}', name: 'app_user_update', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
-    public function updateUser(int $id, Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository): JsonResponse
+    public function updateUser(int $id, Request $request): JsonResponse
     {
         // Récupération de l'utilisateur à mettre à jour
-        $user = $userRepository->find($id);
+        $user = $this->userRepository->find($id);
         if (!$user) {
             return new JsonResponse(['error' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
         }
@@ -82,7 +91,7 @@ final class UserController extends AbstractController
         }
 
         // Sauvegarde des modifications
-        $entityManager->flush();
+        $this->entityManager->flush();
 
         // Préparation des données de réponse
         $responseData = [
@@ -106,10 +115,10 @@ final class UserController extends AbstractController
      */
     #[Route('/api/user/{id}', name: 'app_user_delete', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
-    public function deleteUser(int $id, EntityManagerInterface $entityManager, UserRepository $userRepository): JsonResponse
+    public function deleteUser(int $id): JsonResponse
     {
         // Récupération de l'utilisateur à supprimer
-        $user = $userRepository->find($id);
+        $user = $this->userRepository->find($id);
         if (!$user) {
             return new JsonResponse(['error' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
         }
@@ -123,8 +132,8 @@ final class UserController extends AbstractController
         ];
 
         // Suppression de l'utilisateur
-        $entityManager->remove($user);
-        $entityManager->flush();
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
 
         // Préparation de la réponse
         $response = [
