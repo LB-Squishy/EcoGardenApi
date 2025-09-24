@@ -36,7 +36,7 @@ final class MeteoController extends AbstractController
             return new JsonResponse(['error' => 'Données invalides. La ville est requise.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Clé de cache basée sur la ville et le pays
+        // Clé de cache basée sur la ville
         $cacheKey = 'meteo_' . $cityName;
 
         // Récupération des données de la météo avec mise en cache
@@ -108,7 +108,7 @@ final class MeteoController extends AbstractController
             return new JsonResponse(['error' => 'Données invalides. La ville est requise.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Clé de cache basée sur la ville et le pays
+        // Clé de cache basée sur la ville
         $cacheKey = 'meteo_' . $cityName;
 
         // Récupération des données de la météo avec mise en cache

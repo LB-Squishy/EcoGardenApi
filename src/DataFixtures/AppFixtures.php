@@ -26,8 +26,7 @@ class AppFixtures extends Fixture
             ->setEmail('user@ecogardenapi.com')
             ->setRoles(['ROLE_USER'])
             ->setPassword($this->userPasswordHasher->hashPassword($user, 'user'))
-            ->setVille('Paris')
-            ->setPays('FR');
+            ->setVille('Paris');
         $manager->persist($user);
 
         // Création d'un user "admin"
@@ -36,8 +35,7 @@ class AppFixtures extends Fixture
             ->setEmail('admin@ecogardenapi.com')
             ->setRoles(['ROLE_ADMIN'])
             ->setPassword($this->userPasswordHasher->hashPassword($user, 'admin'))
-            ->setVille('New-York')
-            ->setPays('US');
+            ->setVille('New-York');
         $manager->persist($user);
 
         // Création de conseils avec des mois associés

@@ -22,8 +22,8 @@ final class UserController extends AbstractController
     {
         // Récupération des données
         $data = json_decode($request->getContent(), true);
-        if (empty($data['email']) || empty($data['password']) || empty($data['ville']) || empty($data['pays'])) {
-            return new JsonResponse(['error' => 'Données invalides. Email, mot de passe, ville et pays requis.'], Response::HTTP_BAD_REQUEST);
+        if (empty($data['email']) || empty($data['password']) || empty($data['ville'])) {
+            return new JsonResponse(['error' => 'Données invalides. Email, mot de passe et ville requis.'], Response::HTTP_BAD_REQUEST);
         }
 
         // Création de l'utilisateur
@@ -31,7 +31,6 @@ final class UserController extends AbstractController
         $user->setEmail($data['email']);
         $user->setPassword(password_hash($data['password'], PASSWORD_BCRYPT));
         $user->setVille($data['ville']);
-        $user->setPays($data['pays']);
         $user->setRoles(['ROLE_USER']);
 
         // Sauvegarde de l'utilisateur
@@ -43,7 +42,6 @@ final class UserController extends AbstractController
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'ville' => $user->getVille(),
-            'pays' => $user->getPays()
         ];
 
         // Préparation de la réponse
@@ -79,9 +77,6 @@ final class UserController extends AbstractController
         if (isset($data['ville'])) {
             $user->setVille($data['ville']);
         }
-        if (isset($data['pays'])) {
-            $user->setPays($data['pays']);
-        }
         if (isset($data['roles']) && is_array($data['roles'])) {
             $user->setRoles($data['roles']);
         }
@@ -94,7 +89,6 @@ final class UserController extends AbstractController
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'ville' => $user->getVille(),
-            'pays' => $user->getPays(),
             'roles' => $user->getRoles()
         ];
 
@@ -125,7 +119,6 @@ final class UserController extends AbstractController
             'id' => $user->getId(),
             'email' => $user->getEmail(),
             'ville' => $user->getVille(),
-            'pays' => $user->getPays(),
             'roles' => $user->getRoles()
         ];
 

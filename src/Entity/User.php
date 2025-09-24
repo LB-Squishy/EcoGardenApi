@@ -41,10 +41,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'La ville est obligatoire')]
     private ?string $ville = null;
 
-    #[ORM\Column(type: Types::STRING, length: 2)]
-    #[Assert\NotBlank(message: 'Le pays est obligatoire')]
-    private ?string $pays = null;
-
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -163,18 +159,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVille(string $ville): static
     {
         $this->ville = $ville;
-
-        return $this;
-    }
-
-    public function getPays(): ?string
-    {
-        return $this->pays;
-    }
-
-    public function setPays(string $pays): static
-    {
-        $this->pays = $pays;
 
         return $this;
     }
