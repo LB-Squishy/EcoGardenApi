@@ -12,22 +12,25 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class ConseilController extends AbstractController
 {
     private ConseilRepository $conseilRepository;
     private EntityManagerInterface $entityManager;
+    private SerializerInterface $serializer;
 
-    public function __construct(ConseilRepository $conseilRepository, EntityManagerInterface $entityManager)
+    public function __construct(ConseilRepository $conseilRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer)
     {
         $this->conseilRepository = $conseilRepository;
         $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
     }
 
     /**
      * Récupère les conseils du mois en cours
      */
-    #[Route('/api/conseils', name: 'app_conseil_add_current', methods: ['GET'])]
+    #[Route('/api/conseils', name: 'addConseilCurrentMonth', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
     public function getConseilsCurrentMonth(): JsonResponse
     {
@@ -37,33 +40,19 @@ final class ConseilController extends AbstractController
         // Récupération des conseils pour le mois courant
         $conseils = $this->conseilRepository->findByMonth($currentMonth);
         if (empty($conseils)) {
-            return new JsonResponse(['message' => 'Aucun conseil pour le mois en cours'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Aucun conseil pour le mois en cours'], Response::HTTP_NOT_FOUND);
         }
 
-        // Préparation des données des conseils
-        $conseilsData = [];
-        foreach ($conseils as $conseil) {
-            $conseilsData[] = [
-                'id' => $conseil->getId(),
-                'description' => $conseil->getDescription(),
-                'mois' => $conseil->getMois()->map(fn(ConseilMois $cm) => $cm->getMois())->toArray(),
-            ];
-        }
+        // Sérialisation des conseils avec le groupe 'conseil:read'
+        $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Conseils du mois en cours: ' . $currentMonth,
-                'conseils' => $conseilsData
-            ];
-
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
     /**
      * Récupère les conseils d'un mois en particulier
      */
-    #[Route('/api/conseils/{mois}', name: 'app_conseil_add_month', methods: ['GET'])]
+    #[Route('/api/conseils/{mois}', name: 'addConseilByMonth', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
     public function getConseilsByMonth(int $mois): JsonResponse
     {
@@ -75,27 +64,13 @@ final class ConseilController extends AbstractController
         // Récupération des conseils pour le mois spécifié
         $conseils = $this->conseilRepository->findByMonth($mois);
         if (empty($conseils)) {
-            return new JsonResponse(['message' => 'Aucun conseil pour le mois demandé: ' . $mois], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => 'Aucun conseil pour le mois demandé: ' . $mois], Response::HTTP_NOT_FOUND);
         }
 
-        // Préparation des données des conseils
-        $conseilsData = [];
-        foreach ($conseils as $conseil) {
-            $conseilsData[] = [
-                'id' => $conseil->getId(),
-                'description' => $conseil->getDescription(),
-                'mois' => $conseil->getMois()->map(fn(ConseilMois $cm) => $cm->getMois())->toArray(),
-            ];
-        }
+        // Sérialisation des conseils avec le groupe 'conseil:read'
+        $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Conseils du mois demandé: ' . $mois,
-                'conseils' => $conseilsData
-            ];
-
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -150,7 +125,7 @@ final class ConseilController extends AbstractController
     /**
      * Mettre à jour un conseil
      */
-    #[Route('/api/conseil/{id}', name: 'app_conseil_edit', methods: ['PUT'])]
+    #[Route('/api/conseil/{id}', name: 'editConseil', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function putConseil(int $id, Request $request): JsonResponse
     {
@@ -214,13 +189,13 @@ final class ConseilController extends AbstractController
                 'conseil' => $ResponseData
             ];
 
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($response, Response::HTTP_OK, [], true);
     }
 
     /**
      * Supprimer un conseil
      */
-    #[Route('/api/conseil/{id}', name: 'app_conseil_delete', methods: ['DELETE'])]
+    #[Route('/api/conseil/{id}', name: 'deleteConseil', methods: ['DELETE'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function deleteConseil(int $id): JsonResponse
     {
@@ -230,25 +205,10 @@ final class ConseilController extends AbstractController
             return new JsonResponse(['error' => 'Conseil non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // Préparation des données du conseil supprimé
-        $ResponseData =
-            [
-                'id' => $conseil->getId(),
-                'description' => $conseil->getDescription(),
-                'mois' => $conseil->getMois()->map(fn(ConseilMois $cm) => $cm->getMois())->toArray(),
-            ];
-
         // Suppression du conseil
         $this->entityManager->remove($conseil);
         $this->entityManager->flush();
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Conseil supprimé avec succès',
-                'conseil' =>  $ResponseData
-            ];
-
-        return new JsonResponse($response, Response::HTTP_NO_CONTENT, []);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT, [], true);
     }
 }
