@@ -11,16 +11,19 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class UserController extends AbstractController
 {
     private UserRepository $userRepository;
     private EntityManagerInterface $entityManager;
+    private SerializerInterface $serializer;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $entityManager)
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer)
     {
         $this->userRepository = $userRepository;
         $this->entityManager = $entityManager;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -46,20 +49,10 @@ final class UserController extends AbstractController
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        // Préparation des données de réponse
-        $responseData = [
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'ville' => $user->getVille(),
-        ];
+        // Sérialisation de user avec le groupe 'user:read'
+        $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user:read']);
 
-        // Préparation de la réponse
-        $response = [
-            'message' => 'Utilisateur créé avec succès',
-            'user' => $responseData
-        ];
-
-        return new JsonResponse($response, Response::HTTP_CREATED);
+        return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
 
     /**
@@ -91,23 +84,13 @@ final class UserController extends AbstractController
         }
 
         // Sauvegarde des modifications
+        $this->entityManager->persist($user);
         $this->entityManager->flush();
 
-        // Préparation des données de réponse
-        $responseData = [
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'ville' => $user->getVille(),
-            'roles' => $user->getRoles()
-        ];
+        // Sérialisation de user avec le groupe 'user:read'
+        $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user:write']);
 
-        // Préparation de la réponse
-        $response = [
-            'message' => 'Utilisateur mis à jour avec succès',
-            'user' => $responseData
-        ];
-
-        return new JsonResponse($response, Response::HTTP_OK);
+        return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
     }
 
     /**
@@ -123,24 +106,13 @@ final class UserController extends AbstractController
             return new JsonResponse(['error' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
         }
 
-        // Préparation des données de l'utilisateur supprimé
-        $responseData = [
-            'id' => $user->getId(),
-            'email' => $user->getEmail(),
-            'ville' => $user->getVille(),
-            'roles' => $user->getRoles()
-        ];
-
         // Suppression de l'utilisateur
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
-        // Préparation de la réponse
-        $response = [
-            'message' => 'Utilisateur supprimé avec succès',
-            'user' => $responseData
-        ];
+        // Sérialisation de user avec le groupe 'user:read'
+        $user = $this->serializer->serialize($user, 'json', ['groups' => 'user:read']);
 
-        return new JsonResponse($response, Response::HTTP_NO_CONTENT);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }

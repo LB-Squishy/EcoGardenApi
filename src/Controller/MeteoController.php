@@ -92,14 +92,7 @@ final class MeteoController extends AbstractController
             return new JsonResponse(['error' => 'Impossible de récupérer les données météo.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Météo pour ' . $cityName,
-                'meteo' => $meteoData
-            ];
-
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($meteoData, Response::HTTP_OK, []);
     }
 
     /**
@@ -165,13 +158,7 @@ final class MeteoController extends AbstractController
             return new JsonResponse(['error' => 'Impossible de récupérer les données météo.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Météo pour ' . $cityName,
-                'meteo' => $meteoData
-            ];
 
-        return new JsonResponse($response, Response::HTTP_OK, []);
+        return new JsonResponse($meteoData, Response::HTTP_OK, []);
     }
 }

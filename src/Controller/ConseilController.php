@@ -104,22 +104,10 @@ final class ConseilController extends AbstractController
         $this->entityManager->persist($conseil);
         $this->entityManager->flush();
 
-        // Préparation des données du conseil ajouté
-        $ResponseData =
-            [
-                'id' => $conseil->getId(),
-                'description' => $conseil->getDescription(),
-                'mois' => $data['mois']
-            ];
+        // Sérialisation des conseils avec le groupe 'conseil:read'
+        $jsonConseil = $this->serializer->serialize($conseil, 'json', ['groups' => 'conseil:read']);
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Conseil ajouté avec succès',
-                'conseil' => $ResponseData
-            ];
-
-        return new JsonResponse($response, Response::HTTP_CREATED);
+        return new JsonResponse($jsonConseil, Response::HTTP_CREATED, [], true);
     }
 
     /**
@@ -170,26 +158,14 @@ final class ConseilController extends AbstractController
             }
         }
 
-        // Préparation des données du conseil mis à jour
-        $ResponseData =
-            [
-                'id' => $conseil->getId(),
-                'description' => $conseil->getDescription(),
-                'mois' => $data['mois']
-            ];
-
         // Persistance des modifications
         $this->entityManager->persist($conseil);
         $this->entityManager->flush();
 
-        // Préparation de la réponse
-        $response =
-            [
-                'message' => 'Conseil mis à jour avec succès',
-                'conseil' => $ResponseData
-            ];
+        // Sérialisation des conseils avec le groupe 'conseil:read'
+        $jsonConseil = $this->serializer->serialize($conseil, 'json', ['groups' => 'conseil:read']);
 
-        return new JsonResponse($response, Response::HTTP_OK, [], true);
+        return new JsonResponse($jsonConseil, Response::HTTP_CREATED, [], true);
     }
 
     /**
@@ -209,6 +185,6 @@ final class ConseilController extends AbstractController
         $this->entityManager->remove($conseil);
         $this->entityManager->flush();
 
-        return new JsonResponse(null, Response::HTTP_NO_CONTENT, [], true);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
