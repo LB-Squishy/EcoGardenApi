@@ -120,23 +120,16 @@ final class ConseilController extends AbstractController
             return new JsonResponse(['error' => 'Conseil non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // // Récupération des données
-        // $data = json_decode($request->getContent(), true);
-        // if (empty($data)) {
-        //     return new JsonResponse(['error' => 'Données absentes'], Response::HTTP_BAD_REQUEST);
-        // }
         // Récupération des données
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
+        }
+        // Désérialisation des données dans l'objet existant
         $updatedConseil = $this->serializer->deserialize($request->getContent(), Conseil::class, 'json', ['object_to_populate' => $currentConseil]);
         if (!$updatedConseil) {
             return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
         }
-        // Mise à jour de la description si fournie
-        // if (isset($data['description'])) {
-        //     if (empty($data['description'])) {
-        //         return new JsonResponse(['error' => 'La description ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
-        //     }
-        //     $conseil->setDescription($data['description']);
-        // }
 
         // Validation et mise à jour des mois si fournis
         if (isset($data['mois']) && is_array($data['mois'])) {
