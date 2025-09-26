@@ -26,7 +26,7 @@ final class MeteoController extends AbstractController
      * Récupère la météo de l'utilisateur connecté 
      * https://api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}
      */
-    #[Route('/api/meteo', name: 'app_meteo', methods: ['GET'])]
+    #[Route('/api/meteo', name: 'addMeteoOfUser', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
     public function getLocalMeteo(): JsonResponse
     {
@@ -48,12 +48,9 @@ final class MeteoController extends AbstractController
 
         // Récupération des données de la météo avec mise en cache
         $meteoData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($cityName) {
-
-            // Suivi de mise en cache
+            // Durée de vie du cache 60 secondes et tag pour invalidation future
             // echo ("L'élément n'existe pas dans le cache ou a expiré. Requête à l'API.");
-            // Durée de vie du cache 60 secondes
             $item->expiresAfter(60);
-            // Tag pour invalidation future
             $item->tag(['meteo']);
 
             // Requête à l'API OpenWeather
@@ -87,7 +84,6 @@ final class MeteoController extends AbstractController
                 'temperature' => $result['main']['temp'],
             ];
         });
-
         if (empty($meteoData)) {
             return new JsonResponse(['error' => 'Impossible de récupérer les données météo.'], Response::HTTP_BAD_REQUEST);
         }
@@ -96,15 +92,15 @@ final class MeteoController extends AbstractController
     }
 
     /**
-     * Récupère la météo pour une localisation donnée 
+     * Récupère la météo pour une ville donnée 
      * https://api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}
      */
-    #[Route('/api/meteo/{localisation}', name: 'app_meteo_localisation', methods: ['GET'])]
+    #[Route('/api/meteo/{ville}', name: 'addMeteoByCity', methods: ['GET'])]
     #[IsGranted('ROLE_USER', message: 'Accès refusé, vous devez être connecté.')]
-    public function getCityMeteo(string $localisation): JsonResponse
+    public function getCityMeteo(string $ville): JsonResponse
     {
-        // Récupération de la localisation et traitement
-        $cityName = trim(strtolower($localisation));
+        // Récupération de la ville et traitement
+        $cityName = trim(strtolower($ville));
         if (empty($cityName)) {
             return new JsonResponse(['error' => 'Données invalides. La ville est requise.'], Response::HTTP_BAD_REQUEST);
         }
@@ -114,12 +110,9 @@ final class MeteoController extends AbstractController
 
         // Récupération des données de la météo avec mise en cache
         $meteoData = $this->cache->get($cacheKey, function (ItemInterface $item) use ($cityName) {
-
-            // Suivi de mise en cache
+            // Durée de vie du cache 60 secondes et tag pour invalidation future
             // echo ("L'élément n'existe pas dans le cache ou a expiré. Requête à l'API.");
-            // Durée de vie du cache 60 secondes
             $item->expiresAfter(60);
-            // Tag pour invalidation future
             $item->tag(['meteo']);
 
             // Requête à l'API OpenWeather
@@ -153,7 +146,6 @@ final class MeteoController extends AbstractController
                 'temperature' => $result['main']['temp'],
             ];
         });
-
         if (empty($meteoData)) {
             return new JsonResponse(['error' => 'Impossible de récupérer les données météo.'], Response::HTTP_BAD_REQUEST);
         }

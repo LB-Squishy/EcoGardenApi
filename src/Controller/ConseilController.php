@@ -43,9 +43,8 @@ final class ConseilController extends AbstractController
             return new JsonResponse(['error' => 'Aucun conseil pour le mois en cours'], Response::HTTP_NOT_FOUND);
         }
 
-        // Sérialisation des conseils avec le groupe 'conseil:read'
+        // Sérialisation et retour
         $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
-
         return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
@@ -67,27 +66,31 @@ final class ConseilController extends AbstractController
             return new JsonResponse(['error' => 'Aucun conseil pour le mois demandé: ' . $mois], Response::HTTP_NOT_FOUND);
         }
 
-        // Sérialisation des conseils avec le groupe 'conseil:read'
+        // Sérialisation et retour
         $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
-
         return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
     /**
      * Ajouter un conseil
      */
-    #[Route('/api/conseil', name: 'app_conseil_create', methods: ['POST'])]
+    #[Route('/api/conseil', name: 'createConseil', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function postConseil(Request $request): JsonResponse
     {
-        // Récupération des données
+        // Récupération des données et validation
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['mois']) || !is_array($data['mois']) || empty($data['mois'])) {
+            return new JsonResponse(['error' => 'Le tableau des mois (array) ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Désérialisation
         $conseil = $this->serializer->deserialize($request->getContent(), Conseil::class, 'json');
         if (!$conseil) {
             return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // Validation et ajout des mois
-        $data = json_decode($request->getContent(), true);
+        // Ajout des mois
         foreach ($data['mois'] as $mois) {
             if ($mois < 1 || $mois > 12) {
                 return new JsonResponse(['error' => 'Mois invalide: ' . $mois . ' Saisir un mois entre 1 et 12'], Response::HTTP_BAD_REQUEST);
@@ -101,9 +104,8 @@ final class ConseilController extends AbstractController
         $this->entityManager->persist($conseil);
         $this->entityManager->flush();
 
-        // Sérialisation des conseils avec le groupe 'conseil:read'
+        // Sérialisation et retour
         $jsonConseil = $this->serializer->serialize($conseil, 'json', ['groups' => 'conseil:read']);
-
         return new JsonResponse($jsonConseil, Response::HTTP_CREATED, [], true);
     }
 
@@ -114,28 +116,28 @@ final class ConseilController extends AbstractController
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function putConseil(int $id, Request $request): JsonResponse
     {
+        // Récupération des données et validation
+        $data = json_decode($request->getContent(), true);
+        if (!$data) {
+            return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
+        }
+
         // Récupération du conseil à mettre à jour
         $currentConseil = $this->conseilRepository->find($id);
         if (!$currentConseil) {
             return new JsonResponse(['error' => 'Conseil non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // Récupération des données
-        $data = json_decode($request->getContent(), true);
-        if (!$data) {
-            return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
-        }
-        // Désérialisation des données dans l'objet existant
+        // Désérialisation
         $updatedConseil = $this->serializer->deserialize($request->getContent(), Conseil::class, 'json', ['object_to_populate' => $currentConseil]);
         if (!$updatedConseil) {
             return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
         }
 
         // Validation et mise à jour des mois si fournis
-        if (isset($data['mois']) && is_array($data['mois'])) {
-            if (empty($data['mois'])) {
-                return new JsonResponse(['error' => 'Le tableau des mois (array) ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
-            }
+        if (!isset($data['mois']) || !is_array($data['mois']) || empty($data['mois'])) {
+            return new JsonResponse(['error' => 'Le tableau des mois (array) ne peut pas être vide'], Response::HTTP_BAD_REQUEST);
+        } else {
             // Supprimer les mois existants
             foreach ($updatedConseil->getMois() as $conseilMois) {
                 $updatedConseil->removeMois($conseilMois);
@@ -156,10 +158,9 @@ final class ConseilController extends AbstractController
         $this->entityManager->persist($updatedConseil);
         $this->entityManager->flush();
 
-        // Sérialisation des conseils avec le groupe 'conseil:read'
+        // Sérialisation et retour
         $jsonConseil = $this->serializer->serialize($updatedConseil, 'json', ['groups' => 'conseil:read']);
-
-        return new JsonResponse($jsonConseil, Response::HTTP_CREATED, [], true);
+        return new JsonResponse($jsonConseil, Response::HTTP_OK, [], true);
     }
 
     /**
