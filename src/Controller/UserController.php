@@ -110,9 +110,6 @@ final class UserController extends AbstractController
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
-        // Sérialisation de user avec le groupe 'user:read'
-        $user = $this->serializer->serialize($user, 'json', ['groups' => 'user:read']);
-
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
