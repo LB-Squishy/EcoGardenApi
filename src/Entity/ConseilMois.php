@@ -19,7 +19,9 @@ class ConseilMois
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\NotNull]
     #[Assert\NotBlank(message: 'Le mois est obligatoire')]
-    #[Assert\Range(min: 1, max: 12)]
+    #[Assert\Type(type: 'integer', message: 'Le mois doit être un nombre entier.')]
+    #[Assert\LessThanOrEqual(value: 12, message: 'Le mois ne peut pas dépasser {{ compared_value }}.')]
+    #[Assert\GreaterThanOrEqual(value: 1, message: 'Le mois ne peut pas être inférieur à {{ compared_value }}.')]
     #[Groups(['conseil:read'])]
     private ?int $mois = null;
 

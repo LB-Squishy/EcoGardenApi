@@ -13,6 +13,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UserController extends AbstractController
 {
@@ -20,13 +21,15 @@ final class UserController extends AbstractController
     private EntityManagerInterface $entityManager;
     private SerializerInterface $serializer;
     private UserPasswordHasherInterface $passwordHasher;
+    private ValidatorInterface $validator;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UserPasswordHasherInterface $passwordHasher)
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $entityManager, SerializerInterface $serializer, UserPasswordHasherInterface $passwordHasher, ValidatorInterface $validator)
     {
         $this->userRepository = $userRepository;
         $this->entityManager = $entityManager;
         $this->serializer = $serializer;
         $this->passwordHasher = $passwordHasher;
+        $this->validator = $validator;
     }
 
     /**
@@ -35,19 +38,19 @@ final class UserController extends AbstractController
     #[Route('/api/user', name: 'createUser', methods: ['POST'])]
     public function postUser(Request $request): JsonResponse
     {
-        // Récupération des données et validation des champs
-        $data = json_decode($request->getContent(), true);
-        if (!isset($data['email'], $data['password'], $data['ville'])) {
-            return new JsonResponse(['error' => 'Données invalides. Email, mot de passe et ville requis.'], Response::HTTP_BAD_REQUEST);
-        }
-        if ($this->userRepository->findOneBy(['email' => $data['email']])) {
-            return new JsonResponse(['error' => 'Cet email est déjà utilisé.'], Response::HTTP_CONFLICT);
-        }
-
         // Désérialisation des données dans un nouvel objet User
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
-        if (!$user) {
-            return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
+
+        //On vérifie les erreurs de validation
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
+            $responseData = ['errors' => $errorMessages];
+            $jsonErrors = $this->serializer->serialize($responseData, 'json');
+            return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
         }
 
         // Hashage du mot de passe et assignation du rôle par défaut
@@ -73,26 +76,30 @@ final class UserController extends AbstractController
         // Récupération de l'utilisateur à mettre à jour
         $user = $this->userRepository->find($id);
         if (!$user) {
-            return new JsonResponse(['error' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
-        }
-
-        // Récupération des données
-        $data = json_decode($request->getContent(), true);
-        if (!$data) {
-            return new JsonResponse(['error' => 'Données invalides.'], Response::HTTP_BAD_REQUEST);
+            $responseData = ['errors' => ['user' => 'Cet utilisateur n\'existe pas.']];
+            $jsonErrors = $this->serializer->serialize($responseData, 'json');
+            return new JsonResponse($jsonErrors, Response::HTTP_NOT_FOUND, [], true);
         }
 
         // Désérialisation des données dans l'objet existant
         $this->serializer->deserialize($request->getContent(), User::class, 'json', ['object_to_populate' => $user]);
 
+        //On vérifie les erreurs de validation
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
+            $responseData = ['errors' => $errorMessages];
+            $jsonErrors = $this->serializer->serialize($responseData, 'json');
+            return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
+        }
+
         // Mise à jour du mot de passe si fourni
+        $data = json_decode($request->getContent(), true);
         if (isset($data['password']) && !empty($data['password'])) {
             $user->setPassword($this->passwordHasher->hashPassword($user, $data['password']));
-        }
-        // Vérification unicité de l'email si modifié
-        $checkUser = $this->userRepository->findOneBy(['email' => $user->getEmail()]);
-        if ($checkUser && $checkUser->getId() !== $user->getId()) {
-            return new JsonResponse(['error' => 'Cet email est déjà utilisé.'], Response::HTTP_CONFLICT);
         }
 
         // Persistance des modifications
@@ -114,7 +121,9 @@ final class UserController extends AbstractController
         // Récupération de l'utilisateur à supprimer
         $user = $this->userRepository->find($id);
         if (!$user) {
-            return new JsonResponse(['error' => 'Utilisateur non trouvé.'], Response::HTTP_NOT_FOUND);
+            $responseData = ['errors' => ['user' => 'Cet utilisateur n\'existe pas.']];
+            $jsonErrors = $this->serializer->serialize($responseData, 'json');
+            return new JsonResponse($jsonErrors, Response::HTTP_NOT_FOUND, [], true);
         }
 
         // Suppression de l'utilisateur

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -13,6 +14,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[UniqueEntity(fields: ['email'], message: 'Cet email est déjà utilisé.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -24,6 +26,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank(message: 'L\'email est obligatoire')]
     #[Assert\Email(message: 'L\'email "{{ value }}" n\'est pas valide')]
+    #[Assert\Length(min: 5, minMessage: 'L\'email doit contenir au moins {{ limit }} caractères')]
+    #[Assert\Length(max: 180, maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères')]
     #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
@@ -39,10 +43,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     #[Assert\NotBlank(message: 'Le mot de passe est obligatoire')]
+    #[Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères')]
+    #[Assert\Length(max: 255, maxMessage: 'Le mot de passe ne peut pas dépasser {{ limit }} caractères')]
     private ?string $password = null;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\NotBlank(message: 'La ville est obligatoire')]
+    #[Assert\Length(min: 1, minMessage: 'La ville doit contenir au moins {{ limit }} caractères')]
+    #[Assert\Length(max: 255, maxMessage: 'La ville ne peut pas dépasser {{ limit }} caractères')]
     #[Groups(['user:read', 'user:write'])]
     private ?string $ville = null;
 
