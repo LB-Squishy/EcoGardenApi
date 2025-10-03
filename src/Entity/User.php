@@ -9,7 +9,33 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
+use Hateoas\Configuration\Annotation as Hateoas;
+
+/**
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateUser",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"user:read","user:write"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      attributes = {
+ *          "method" = "PUT", "type" = "application/json", "title" = "Modifier cet utilisateur"
+ *      }
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteUser",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"user:read","user:write"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      attributes = {
+ *          "method" = "DELETE", "type" = "application/json", "title" = "Supprimer cet utilisateur"
+ *      } 
+ * )
+ */
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -25,7 +51,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank(message: 'L\'email est obligatoire')]
-    #[Assert\Email(message: 'L\'email "{{ value }}" n\'est pas valide')]
+    #[Assert\Email(message: 'L\'email n\'est pas valide')]
     #[Assert\Length(min: 5, minMessage: 'L\'email doit contenir au moins {{ limit }} caractères')]
     #[Assert\Length(max: 180, maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères')]
     #[Groups(['user:read', 'user:write'])]

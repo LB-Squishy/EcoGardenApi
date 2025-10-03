@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class UserController extends AbstractController
@@ -62,7 +63,8 @@ final class UserController extends AbstractController
         $this->entityManager->flush();
 
         // Sérialisation et retour
-        $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user:read']);
+        $context = SerializationContext::create()->setGroups(['user:read']);
+        $jsonUser = $this->serializer->serialize($user, 'json', $context);
         return new JsonResponse($jsonUser, Response::HTTP_CREATED, [], true);
     }
 
@@ -81,8 +83,23 @@ final class UserController extends AbstractController
             return new JsonResponse($jsonErrors, Response::HTTP_NOT_FOUND, [], true);
         }
 
-        // Désérialisation des données dans l'objet existant
-        $this->serializer->deserialize($request->getContent(), User::class, 'json', ['object_to_populate' => $user]);
+        // Récupération des data
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            $responseData = ['errors' => ['request' => 'Données invalides.']];
+            $jsonErrors = $this->serializer->serialize($responseData, 'json');
+            return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
+        }
+        //Mise à jour des champs
+        if (isset($data['email'])) {
+            $user->setEmail($data['email']);
+        }
+        if (isset($data['ville'])) {
+            $user->setVille($data['ville']);
+        }
+        if (isset($data['roles']) && is_array($data['roles'])) {
+            $user->setRoles($data['roles']);
+        }
 
         //On vérifie les erreurs de validation
         $errors = $this->validator->validate($user);
@@ -107,7 +124,8 @@ final class UserController extends AbstractController
         $this->entityManager->flush();
 
         // Sérialisation et retour
-        $jsonUser = $this->serializer->serialize($user, 'json', ['groups' => 'user:write']);
+        $context = SerializationContext::create()->setGroups(['user:write']);
+        $jsonUser = $this->serializer->serialize($user, 'json', $context);
         return new JsonResponse($jsonUser, Response::HTTP_OK, [], true);
     }
 

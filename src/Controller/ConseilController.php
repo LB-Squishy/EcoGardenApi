@@ -6,13 +6,14 @@ use App\Entity\Conseil;
 use App\Entity\ConseilMois;
 use App\Repository\ConseilRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Serializer\SerializerInterface;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class ConseilController extends AbstractController
@@ -49,7 +50,8 @@ final class ConseilController extends AbstractController
         }
 
         // Sérialisation et retour
-        $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
+        $context = SerializationContext::create()->setGroups(['conseil:read']);
+        $jsonConseils = $this->serializer->serialize($conseils, 'json', $context);
         return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
@@ -83,7 +85,8 @@ final class ConseilController extends AbstractController
         }
 
         // Sérialisation et retour
-        $jsonConseils = $this->serializer->serialize($conseils, 'json', ['groups' => 'conseil:read']);
+        $context = SerializationContext::create()->setGroups(['conseil:read']);
+        $jsonConseils = $this->serializer->serialize($conseils, 'json', $context);
         return new JsonResponse($jsonConseils, Response::HTTP_OK, [], true);
     }
 
@@ -102,8 +105,11 @@ final class ConseilController extends AbstractController
             return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
         }
 
-        // Désérialisation
-        $conseil = $this->serializer->deserialize($request->getContent(), Conseil::class, 'json');
+        //Création du conseil
+        $conseil = new Conseil();
+        if (isset($data['description'])) {
+            $conseil->setDescription($data['description']);
+        }
 
         // Ajout des mois
         foreach ($data['mois'] as $mois) {
@@ -140,14 +146,15 @@ final class ConseilController extends AbstractController
         $this->entityManager->flush();
 
         // Sérialisation et retour
-        $jsonConseil = $this->serializer->serialize($conseil, 'json', ['groups' => 'conseil:read']);
+        $context = SerializationContext::create()->setGroups(['conseil:read']);
+        $jsonConseil = $this->serializer->serialize($conseil, 'json', $context);
         return new JsonResponse($jsonConseil, Response::HTTP_CREATED, [], true);
     }
 
     /**
      * Mettre à jour un conseil
      */
-    #[Route('/api/conseil/{id}', name: 'editConseil', methods: ['PUT'])]
+    #[Route('/api/conseil/{id}', name: 'updateConseil', methods: ['PUT'])]
     #[IsGranted('ROLE_ADMIN', message: 'Accès refusé, vous devez être administrateur.')]
     public function putConseil(int $id, Request $request): JsonResponse
     {
@@ -167,14 +174,18 @@ final class ConseilController extends AbstractController
             return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
         }
 
-        // Désérialisation
-        $updatedConseil = $this->serializer->deserialize($request->getContent(), Conseil::class, 'json', ['object_to_populate' => $currentConseil]);
+        // Mise à jour du conseil
+        if (isset($data['description'])) {
+            $currentConseil->setDescription($data['description']);
+        }
 
-        // Gestion des mois : suppression des anciens et ajout des nouveaux
-        foreach ($updatedConseil->getMois() as $conseilMois) {
-            $updatedConseil->removeMois($conseilMois);
+        // Gestion des mois : suppression des anciens
+        foreach ($currentConseil->getMois() as $conseilMois) {
+            $currentConseil->removeMois($conseilMois);
             $this->entityManager->remove($conseilMois);
         }
+
+        // Ajout des nouveaux mois
         foreach ($data['mois'] as $mois) {
             $conseilMois = new ConseilMois();
             $conseilMois->setMois($mois);
@@ -189,11 +200,11 @@ final class ConseilController extends AbstractController
                 $jsonErrors = $this->serializer->serialize($responseData, 'json');
                 return new JsonResponse($jsonErrors, Response::HTTP_BAD_REQUEST, [], true);
             }
-            $updatedConseil->addMois($conseilMois);
+            $currentConseil->addMois($conseilMois);
         }
 
         // Validation de l'entité Conseil mise à jour
-        $errors = $this->validator->validate($updatedConseil);
+        $errors = $this->validator->validate($currentConseil);
         if (count($errors) > 0) {
             $errorMessages = [];
             foreach ($errors as $error) {
@@ -205,11 +216,12 @@ final class ConseilController extends AbstractController
         }
 
         // Persistance des modifications
-        $this->entityManager->persist($updatedConseil);
+        $this->entityManager->persist($currentConseil);
         $this->entityManager->flush();
 
         // Sérialisation et retour
-        $jsonConseil = $this->serializer->serialize($updatedConseil, 'json', ['groups' => 'conseil:read']);
+        $context = SerializationContext::create()->setGroups(['conseil:read']);
+        $jsonConseil = $this->serializer->serialize($currentConseil, 'json', $context);
         return new JsonResponse($jsonConseil, Response::HTTP_OK, [], true);
     }
 

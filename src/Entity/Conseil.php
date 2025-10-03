@@ -8,7 +8,33 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
+use Hateoas\Configuration\Annotation as Hateoas;
+
+/**
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateConseil",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"conseil:read"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      attributes = {
+ *          "method" = "PUT", "type" = "application/json", "title" = "Modifier ce conseil"
+ *      } 
+ * )
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteConseil",
+ *          parameters = { "id" = "expr(object.getId())" },
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"conseil:read"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))"),
+ *      attributes = {
+ *          "method" = "DELETE", "type" = "application/json", "title" = "Supprimer ce conseil"
+ *      }
+ * )
+ */
 
 #[ORM\Entity(repositoryClass: ConseilRepository::class)]
 #[ORM\HasLifecycleCallbacks]
