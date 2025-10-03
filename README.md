@@ -1,34 +1,121 @@
-Nouveau Projet:
+[![forthebadge](https://forthebadge.com/images/badges/powered-by-coffee.svg)](https://forthebadge.com)
 
--   symfony new NomProjet
--   composer require symfony/maker-bundle --dev
--   composer require orm
+# EcoGardenApi
 
-Table et entités:
+## Contenu:
 
--   Parametrer .env.local pour link la DB (ex WAMP : DATABASE_URL="mysql://root:@127.0.0.1:3306/EcoGardenApi?serverVersion=9.1.0&charset=utf8mb4")
--   Créer la base de donnée : symfony console doctrine:database:create -–if-not-exists
--   Créer une entité : symfony console make:entity Conseil (ressaisir pour remodifier l'entité)
--   composer require symfony/validator
--   Utiliser #[ORM\HasLifecycleCallbacks] pour gérer les updates et creates dates
--   Créer la migration : symfony console make:migration
--   Appliquer la migration : symfony console doctrine:migrations:migrate
+Une API REST développée avec Symfony pour la gestion d'un jardin écologique.
 
-Fixtures:
+## 📋 Prérequis
 
--   composer require orm-fixtures --dev
--   php bin/console doctrine:fixtures:load (appliquer la fixture)
+Avant d'installer le projet, assurez-vous d'avoir :
 
-Premieres routes:
+-   **PHP 8.1** ou supérieur
+-   **Composer** (gestionnaire de dépendances PHP)
+-   **MySQL** ou **MariaDB**
+-   **Git**
+-   **OpenSSL** (pour la génération des clés JWT)
 
--   php bin/console make:controller
--   composer require symfony/serializer-pack
--   composer require security
--   php bin/console make:user
--   php bin/console make:entity User
+## 🚀 Installation
 
-Gérer l'authentification:
+### 1. Cloner le projet
 
--   composer require lexik/jwt-authentication-bundle
--   Générer la clef privé : openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
--   Générer la clef publique : openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
+```bash
+git clone https://github.com/votre-username/EcoGardenApi.git
+cd EcoGardenApi
+```
+
+### 2. Installer les dépendances
+
+```bash
+composer install
+```
+
+### 3. Configuration de l'environnement
+
+Copiez le fichier `.env` vers `.env.local` et configurez vos paramètres :
+
+```bash
+copy .env .env.local
+```
+
+Modifiez le fichier `.env.local` avec vos paramètres de base de données :
+
+```env
+DATABASE_URL="mysql://app:!ChangeMe!@127.0.0.1:3306/EcoGardenApi?serverVersion=8.0&charset=utf8mb4"
+```
+
+### 4. Configuration de la base de données
+
+Créez la base de données :
+
+```bash
+php bin/console doctrine:database:create --if-not-exists
+```
+
+Appliquez les migrations :
+
+```bash
+php bin/console doctrine:migrations:migrate
+```
+
+Alimentez la base de donnée:
+
+```bash
+php bin/console doctrine:fixtures:load
+```
+
+### 5. Configuration JWT (Authentification)
+
+Créez le dossier pour les clés JWT :
+
+```bash
+mkdir config/jwt
+```
+
+Générez les clés privée et publique :
+
+```bash
+# Clé privée (vous devrez saisir une passphrase)
+openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+
+# Clé publique
+openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
+```
+
+Ajoutez la passphrase dans votre fichier `.env.local` :
+
+```env
+JWT_PASSPHRASE=votre_passphrase_ici
+```
+
+### 6. Démarrer le serveur de développement
+
+```bash
+symfony server:start
+```
+
+## ✅ Vérification de l'installation
+
+Votre API devrait maintenant être accessible à l'adresse : `http://localhost:8000`
+
+Vous pouvez tester l'API en accédant aux endpoints disponibles via Postman.
+
+## 🛠️ Commandes utiles pour le développement
+
+```bash
+# Créer une nouvelle entité
+php bin/console make:entity
+
+# Créer une migration
+php bin/console make:migration
+
+# Appliquer les migrations
+php bin/console doctrine:migrations:migrate
+
+# Créer un contrôleur
+php bin/console make:controller
+
+# Vider le cache
+php bin/console cache:clear
+```
